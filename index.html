@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>City Treasure Hunt</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Quicksand:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --sky:      #c9f0ff;
+  --mint:     #b8f5e6;
+  --lemon:    #fff59d;
+  --peach:    #ffd0b5;
+  --blush:    #ffb7c5;
+  --lilac:    #e1c6ff;
+  --coral:    #ff6f72;
+  --coral-dk: #d9383b;
+  --teal:     #00bfa5;
+  --teal-dk:  #007c6e;
+  --violet:   #9c6fde;
+  --violet-dk:#6a3db5;
+  --sun:      #ffcc00;
+  --white:    #ffffff;
+  --ink:      #1a1240;
+  --soft-ink: #3d2e6b;
+  --ui-bg:    rgba(255,255,255,0.97);
+  --ui-border:#a78bfa;
+  --shadow:   rgba(100,60,180,0.15);
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+
+body {
+  font-family: 'Quicksand', sans-serif;
+  background: var(--sky);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+.map-world { min-height:100vh; position:relative; overflow:hidden; }
+
+.map-svg-bg {
+  position:fixed; inset:0;
+  width:100%; height:100%;
+  z-index:0;
+}
+
+/* ═══ BALLOONS ═══ */
+.balloons-layer { position:fixed; inset:0; z-index:1; pointer-events:none; overflow:hidden; }
+.balloon {
+  position:absolute;
+  font-size:1.6rem;
+  animation:balloonFloat linear infinite;
+}
+@keyframes balloonFloat {
+  from { transform:translateY(110vh); opacity:0.9; }
+  10%  { opacity:1; }
+  90%  { opacity:0.8; }
+  to   { transform:translateY(-120px) translateX(20px); opacity:0; }
+}
+
+/* ═══ BIRDS ═══ */
+.birds { position:fixed; inset:0; z-index:2; pointer-events:none; }
+.bird {
+  position:absolute; font-size:1.3rem;
+  animation:birdFly linear infinite;
+}
+@keyframes birdFly {
+  from { transform:translateX(-80px); }
+  to   { transform:translateX(calc(100vw + 80px)); }
+}
+
+/* ═══ CARS ═══ */
+.cars-layer { position:fixed; bottom:0; left:0; right:0; height:60px; z-index:1; pointer-events:none; overflow:hidden; }
+.car {
+  position:absolute; font-size:1.5rem; bottom:6px;
+  animation:carDrive linear infinite;
+  filter:drop-shadow(0 3px 6px rgba(0,0,0,0.12));
+}
+@keyframes carDrive {
+  from { transform:translateX(-80px); }
+  to   { transform:translateX(calc(100vw + 80px)); }
+}
+
+/* ═══ CLOUDS ═══ */
+.clouds { position:fixed; inset:0; z-index:1; pointer-events:none; overflow:hidden; }
+.cloud {
+  position:absolute;
+  background:rgba(255,255,255,0.75);
+  border-radius:60px;
+  animation:cloudDrift linear infinite;
+}
+.cloud::before, .cloud::after { content:''; position:absolute; background:inherit; border-radius:50%; }
+.cloud::before { width:55%; height:160%; top:-45%; left:15%; }
+.cloud::after  { width:45%; height:140%; top:-35%; right:12%; }
+@keyframes cloudDrift {
+  from { transform:translateX(-220px); }
+  to   { transform:translateX(calc(100vw + 220px)); }
+}
+
+/* ═══ PAGE ═══ */
+.page {
+  position:relative; z-index:10;
+  max-width:960px; margin:0 auto;
+  padding:30px 20px 60px;
+}
+
+/* ═══ HEADER ═══ */
+.header-banner {
+  background: linear-gradient(135deg, #ff6f72 0%, #ff8fab 30%, #c084fc 65%, #818cf8 100%);
+  border-radius:28px;
+  padding:24px 36px 20px;
+  text-align:center;
+  margin-bottom:24px;
+  box-shadow:
+    0 8px 0 #a83dbd,
+    0 14px 40px rgba(160,60,200,0.3),
+    inset 0 2px 0 rgba(255,255,255,0.5);
+  position:relative; overflow:hidden;
+  animation:bannerPop 0.7s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes bannerPop {
+  from { opacity:0; transform:scale(0.85) translateY(-20px); }
+  to   { opacity:1; transform:scale(1) translateY(0); }
+}
+.header-banner::before {
+  content:''; position:absolute; inset:0;
+  background: radial-gradient(ellipse at 25% 40%, rgba(255,255,255,0.25) 0%, transparent 55%),
+              radial-gradient(ellipse at 75% 60%, rgba(255,255,255,0.15) 0%, transparent 55%);
+}
+.banner-stars {
+  font-size:1.5rem; letter-spacing:10px; margin-bottom:6px;
+  display:inline-block;
+  animation:starPop 2.5s ease-in-out infinite;
+}
+@keyframes starPop {
+  0%,100%{transform:scale(1) rotate(0)} 50%{transform:scale(1.12) rotate(6deg)}
+}
+.title-main {
+  font-family:'Fredoka One', cursive;
+  font-size: clamp(2.8rem,8vw,5.2rem);
+  color:#fff;
+  text-shadow: 3px 4px 0 rgba(100,30,150,0.35), 0 0 30px rgba(255,255,255,0.3);
+  letter-spacing:0.04em; line-height:1; margin-bottom:6px;
+}
+.title-sub {
+  font-family:'Quicksand', sans-serif;
+  font-size:clamp(0.75rem,2vw,0.95rem); font-weight:800;
+  color:rgba(255,255,255,0.92); letter-spacing:0.28em;
+  text-transform:uppercase;
+}
+
+/* ═══ PROGRESS ═══ */
+.progress-wrap {
+  background:var(--ui-bg);
+  border-radius:16px; border:3px solid var(--lilac);
+  padding:14px 20px; margin-bottom:24px;
+  display:flex; align-items:center; gap:14px;
+  box-shadow:0 6px 0 #c4a8f5, 0 10px 30px var(--shadow);
+  animation:slideUp 0.6s 0.1s ease both;
+}
+@keyframes slideUp {
+  from{opacity:0;transform:translateY(24px);}
+  to{opacity:1;transform:translateY(0);}
+}
+.progress-label {
+  font-size:0.65rem; font-weight:800; color:var(--violet);
+  letter-spacing:0.2em; text-transform:uppercase; white-space:nowrap; flex-shrink:0;
+}
+.progress-track {
+  flex:1; height:16px;
+  background:rgba(167,139,250,0.12);
+  border-radius:20px; overflow:hidden;
+  border:2px solid rgba(167,139,250,0.25);
+  position:relative;
+}
+.progress-fill {
+  height:100%;
+  background:linear-gradient(90deg, #ff6f72 0%, #ff8fab 40%, #c084fc 70%, #818cf8 100%);
+  border-radius:20px; width:0%;
+  transition:width 0.8s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow:0 0 12px rgba(192,132,252,0.5);
+  position:relative; overflow:hidden;
+}
+.progress-fill::after {
+  content:''; position:absolute;
+  top:0;left:-60px; width:40px; height:100%;
+  background:rgba(255,255,255,0.45);
+  transform:skewX(-20deg);
+  animation:shimmer 1.8s ease-in-out infinite;
+}
+@keyframes shimmer { 0%{left:-60px;}100%{left:120%;} }
+.progress-count {
+  font-family:'Fredoka One', cursive;
+  font-size:1rem; color:var(--violet);
+  flex-shrink:0; min-width:36px; text-align:right;
+}
+
+/* ═══ MAP PANEL ═══ */
+.map-panel {
+  background:var(--ui-bg); border-radius:22px;
+  border:3px solid var(--ui-border);
+  box-shadow: 0 8px 0 #9b5de5, 0 16px 50px var(--shadow), inset 0 2px 0 rgba(255,255,255,0.95);
+  margin-bottom:24px; overflow:hidden; position:relative;
+  animation:slideUp 0.6s 0.2s ease both;
+}
+.map-panel-inner { display:flex; align-items:stretch; }
+.mini-map-wrap { flex:1; position:relative; min-height:260px; }
+.mini-map-svg { width:100%; height:100%; display:block; min-height:260px; }
+
+.compass-sidebar {
+  width:130px;
+  background:linear-gradient(180deg, #f3e8ff 0%, #ede9fe 100%);
+  border-left:3px solid var(--lilac);
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  padding:16px 12px; gap:12px; flex-shrink:0;
+}
+.compass-svg { width:90px; height:90px; filter:drop-shadow(0 4px 10px rgba(124,58,237,0.25)); }
+.compass-needle-el {
+  transform-origin:45px 45px;
+  animation:needleWobble 5s ease-in-out infinite;
+}
+@keyframes needleWobble {
+  0%,100%{transform:rotate(0deg);}
+  30%{transform:rotate(5deg);}
+  70%{transform:rotate(-4deg);}
+}
+.compass-label {
+  font-family:'Fredoka One', cursive;
+  font-size:0.72rem; color:var(--violet-dk);
+  text-align:center; letter-spacing:0.1em;
+}
+.distance-badge {
+  background:linear-gradient(135deg, var(--coral) 0%, #ff8fab 100%);
+  color:#fff; font-size:0.6rem; font-weight:800;
+  text-transform:uppercase; letter-spacing:0.1em;
+  padding:5px 10px; border-radius:20px;
+  box-shadow:0 3px 0 #c03050; text-align:center;
+}
+
+/* ═══ CLUE CARDS ═══ */
+.clues-grid {
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:20px; margin-bottom:24px;
+}
+.clue-card {
+  background:var(--ui-bg); border-radius:22px;
+  border:3px solid #e2d9f3; padding:0 0 20px;
+  box-shadow: 0 6px 0 #b8a0e8, 0 12px 35px var(--shadow), inset 0 2px 0 rgba(255,255,255,0.95);
+  overflow:hidden;
+  transition:transform 0.25s ease, box-shadow 0.25s ease;
+  animation:slideUp 0.6s ease both; position:relative;
+}
+.clue-card:nth-child(2) { animation-delay:0.1s; }
+.clue-card:hover {
+  transform:translateY(-6px) rotate(-0.4deg);
+  box-shadow:0 14px 0 #b8a0e8, 0 24px 45px var(--shadow);
+}
+.card-header {
+  padding:14px 18px 12px;
+  display:flex; align-items:center; gap:10px; position:relative;
+}
+.card1 .card-header { background:linear-gradient(135deg, #ff6f72 0%, #ff8fab 100%); }
+.card2 .card-header { background:linear-gradient(135deg, #818cf8 0%, #c084fc 100%); }
+.card-icon-badge {
+  width:46px; height:46px; border-radius:50%;
+  background:rgba(255,255,255,0.28);
+  border:3px solid rgba(255,255,255,0.55);
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.4rem; flex-shrink:0;
+  box-shadow:0 3px 10px rgba(0,0,0,0.12);
+}
+.card-header-text { flex:1; }
+.card-num {
+  font-size:0.6rem; font-weight:800;
+  color:rgba(255,255,255,0.75);
+  text-transform:uppercase; letter-spacing:0.2em;
+}
+.card-title {
+  font-family:'Fredoka One', cursive;
+  font-size:1.15rem; color:#fff;
+  text-shadow:1px 2px 0 rgba(0,0,0,0.12); line-height:1.1;
+}
+.status-pill {
+  padding:4px 10px; border-radius:20px;
+  font-size:0.6rem; font-weight:800;
+  text-transform:uppercase; letter-spacing:0.1em;
+  background:rgba(255,255,255,0.22);
+  color:rgba(255,255,255,0.85);
+  border:2px solid rgba(255,255,255,0.35); flex-shrink:0;
+}
+.status-pill.solved {
+  background:#00bfa5; color:#fff;
+  border-color:#007c6e; box-shadow:0 2px 0 #005f54;
+}
+.card-body { padding:16px 18px 0; }
+.riddle-bubble {
+  background:linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  border:2px solid #c4b5fd; border-radius:14px;
+  padding:14px 16px; margin-bottom:14px; position:relative;
+}
+.riddle-bubble::before {
+  content:'✨'; position:absolute; top:-14px; left:14px; font-size:1.3rem;
+}
+.riddle-text {
+  font-size:0.88rem; font-weight:700;
+  color:var(--soft-ink); line-height:1.8; font-style:italic;
+}
+.answer-label {
+  font-size:0.65rem; font-weight:800;
+  text-transform:uppercase; letter-spacing:0.2em;
+  color:var(--violet); display:block; margin-bottom:6px;
+}
+.answer-row { display:flex; gap:8px; }
+.answer-input {
+  flex:1; padding:10px 14px; background:#fff;
+  border:2.5px solid #c4b5fd; border-radius:12px;
+  font-family:'Quicksand', sans-serif;
+  font-size:0.9rem; font-weight:700; color:var(--ink);
+  outline:none; transition:border-color 0.2s, box-shadow 0.2s;
+}
+.answer-input:focus {
+  border-color:var(--violet);
+  box-shadow:0 0 0 3px rgba(156,111,222,0.2);
+}
+.answer-input::placeholder { color:#c4b5fd; font-weight:600; }
+.answer-input:disabled { background:#f5f3ff; color:#aaa; }
+.answer-btn {
+  padding:10px 16px; border-radius:12px; border:none;
+  font-family:'Fredoka One', cursive;
+  font-size:0.88rem; cursor:pointer; white-space:nowrap;
+  transition:transform 0.15s, filter 0.15s;
+}
+.card1 .answer-btn { background:linear-gradient(180deg,#ff8fab,#ff6f72); color:#fff; box-shadow:0 4px 0 #c03050; }
+.card2 .answer-btn { background:linear-gradient(180deg,#c084fc,#818cf8); color:#fff; box-shadow:0 4px 0 #6a3db5; }
+.answer-btn:hover:not(:disabled) { filter:brightness(1.08); transform:translateY(-2px); }
+.answer-btn:active:not(:disabled){ transform:translateY(2px); box-shadow:0 1px 0 rgba(0,0,0,0.18); }
+.answer-btn:disabled { opacity:0.45; cursor:default; }
+.feedback-msg {
+  margin-top:8px; font-size:0.78rem; font-weight:800;
+  min-height:18px; border-radius:8px; padding:0 4px;
+}
+.fb-ok  { color:#00897b; }
+.fb-err { color:#e53935; }
+
+/* ═══ TREASURE ═══ */
+#treasure-reveal { display:none; margin-bottom:24px; animation:revealPop 0.7s cubic-bezier(0.34,1.56,0.64,1) both; }
+@keyframes revealPop {
+  from{opacity:0;transform:scale(0.5) rotate(-5deg);}
+  to{opacity:1;transform:scale(1) rotate(0);}
+}
+.treasure-card {
+  background:linear-gradient(135deg, #ff6f72 0%, #ff8fab 25%, #c084fc 55%, #818cf8 80%, #67e8f9 100%);
+  border-radius:28px; border:4px solid rgba(255,255,255,0.6);
+  padding:36px 32px; text-align:center;
+  box-shadow: 0 10px 0 #8b3dbd, 0 20px 60px rgba(160,60,200,0.4), inset 0 2px 0 rgba(255,255,255,0.5);
+  position:relative; overflow:hidden;
+}
+.treasure-card::before {
+  content:''; position:absolute; inset:0;
+  background:radial-gradient(ellipse at 30% 40%, rgba(255,255,255,0.3) 0%, transparent 60%);
+}
+.confetti-row {
+  font-size:2rem; letter-spacing:14px; display:block; margin-bottom:8px;
+  animation:bounce 1s ease-in-out infinite alternate;
+}
+@keyframes bounce { from{transform:translateY(0)} to{transform:translateY(-8px)} }
+.reveal-title {
+  font-family:'Fredoka One', cursive;
+  font-size:clamp(1.6rem,5vw,2.6rem); color:#fff;
+  text-shadow:2px 3px 0 rgba(100,30,150,0.3); margin-bottom:10px;
+}
+.reveal-text {
+  font-size:1rem; font-weight:700;
+  color:rgba(255,255,255,0.95); line-height:1.7; margin-bottom:12px;
+}
+.reveal-sub {
+  font-size:0.75rem; font-weight:800;
+  color:rgba(255,255,255,0.75);
+  letter-spacing:0.2em; text-transform:uppercase;
+}
+
+/* ═══ COIN BURST ═══ */
+.coin {
+  position:fixed; z-index:999; font-size:1.5rem; pointer-events:none;
+  animation:coinBurst 1.6s ease-out forwards;
+}
+@keyframes coinBurst {
+  0%   { transform:translateY(0) scale(0.5) rotate(0deg); opacity:1; }
+  60%  { opacity:1; }
+  100% { transform:translateY(-180px) scale(1) rotate(720deg); opacity:0; }
+}
+
+/* ═══ FOOTER ═══ */
+.footer { text-align:center; margin-top:8px; }
+.footer p {
+  font-size:0.75rem; font-weight:700;
+  color:rgba(90,60,160,0.6); letter-spacing:0.18em;
+}
+
+@media(max-width:600px){
+  .clues-grid { grid-template-columns:1fr; }
+  .map-panel-inner { flex-direction:column; }
+  .compass-sidebar { width:100%; flex-direction:row; padding:12px 20px; border-left:none; border-top:3px solid var(--lilac); }
+}
+</style>
+</head>
+<body>
+
+<!-- CLOUDS -->
+<div class="clouds">
+  <div class="cloud" style="width:130px;height:42px;top:5%;animation-duration:34s;animation-delay:0s;opacity:0.85;"></div>
+  <div class="cloud" style="width:90px;height:30px;top:14%;animation-duration:24s;animation-delay:-11s;opacity:0.55;"></div>
+  <div class="cloud" style="width:170px;height:52px;top:3%;animation-duration:42s;animation-delay:-22s;opacity:0.7;"></div>
+  <div class="cloud" style="width:70px;height:24px;top:22%;animation-duration:20s;animation-delay:-7s;opacity:0.45;"></div>
+  <div class="cloud" style="width:110px;height:36px;top:9%;animation-duration:28s;animation-delay:-16s;opacity:0.6;"></div>
+</div>
+
+<!-- BIRDS / BUTTERFLIES -->
+<div class="birds">
+  <div class="bird" style="top:8%;animation-duration:18s;animation-delay:-3s;">🦋</div>
+  <div class="bird" style="top:16%;animation-duration:25s;animation-delay:-12s;font-size:1.1rem;">🐦</div>
+  <div class="bird" style="top:6%;animation-duration:32s;animation-delay:-20s;font-size:1rem;">🦜</div>
+</div>
+
+<!-- BALLOONS -->
+<div class="balloons-layer">
+  <div class="balloon" style="left:8%;animation-duration:18s;animation-delay:0s;">🎈</div>
+  <div class="balloon" style="left:25%;animation-duration:22s;animation-delay:-8s;font-size:1.2rem;">🎀</div>
+  <div class="balloon" style="left:55%;animation-duration:16s;animation-delay:-5s;">🎈</div>
+  <div class="balloon" style="left:75%;animation-duration:20s;animation-delay:-13s;font-size:1.4rem;">🎊</div>
+  <div class="balloon" style="left:88%;animation-duration:14s;animation-delay:-3s;font-size:1.1rem;">🎈</div>
+</div>
+
+<!-- CARS -->
+<div class="cars-layer">
+  <div class="car" style="animation-duration:11s;animation-delay:0s;">🚙</div>
+  <div class="car" style="animation-duration:8s;animation-delay:-4s;bottom:28px;font-size:1.3rem;">🚕</div>
+  <div class="car" style="animation-duration:15s;animation-delay:-8s;font-size:1.2rem;">🚌</div>
+  <div class="car" style="animation-duration:13s;animation-delay:-6s;font-size:1rem;">🛵</div>
+</div>
+
+<!-- FULL CITY BG SVG — Colorful Soft Pastel City -->
+<svg class="map-svg-bg" viewBox="0 0 1400 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#c9f0ff"/>
+      <stop offset="55%"  stop-color="#d8f3dc"/>
+      <stop offset="100%" stop-color="#ffe8f5"/>
+    </linearGradient>
+    <filter id="softShadow">
+      <feDropShadow dx="0" dy="5" stdDeviation="8" flood-color="rgba(120,80,200,0.1)"/>
+    </filter>
+    <radialGradient id="parkGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#b8f5e6"/>
+      <stop offset="100%" stop-color="#86efac"/>
+    </radialGradient>
+  </defs>
+
+  <!-- SKY -->
+  <rect width="1400" height="900" fill="url(#skyGrad)"/>
+
+  <!-- SUN -->
+  <circle cx="1310" cy="95" r="72" fill="#fff9c4" opacity="0.55"/>
+  <circle cx="1310" cy="95" r="52" fill="#ffee58" opacity="0.45"/>
+  <circle cx="1310" cy="95" r="36" fill="#ffcc00" opacity="0.65"/>
+
+  <!-- RAINBOW -->
+  <g opacity="0.16">
+    <path d="M 80,420 Q 700,10 1320,420" fill="none" stroke="#ff6f72" stroke-width="22"/>
+    <path d="M 80,420 Q 700,42 1320,420" fill="none" stroke="#ffcc00" stroke-width="18"/>
+    <path d="M 80,420 Q 700,68 1320,420" fill="none" stroke="#a3e635" stroke-width="14"/>
+    <path d="M 80,420 Q 700,92 1320,420" fill="none" stroke="#22d3ee" stroke-width="12"/>
+    <path d="M 80,420 Q 700,116 1320,420" fill="none" stroke="#818cf8" stroke-width="10"/>
+  </g>
+
+  <!-- ROADS (pastel lavender) -->
+  <g fill="none" stroke="#d5cef5" stroke-width="26">
+    <line x1="0" y1="310" x2="1400" y2="310"/>
+    <line x1="0" y1="530" x2="1400" y2="530"/>
+    <line x1="0" y1="755" x2="1400" y2="755"/>
+    <line x1="205"  y1="0" x2="205"  y2="900"/>
+    <line x1="510"  y1="0" x2="510"  y2="900"/>
+    <line x1="810"  y1="0" x2="810"  y2="900"/>
+    <line x1="1110" y1="0" x2="1110" y2="900"/>
+  </g>
+  <g stroke="#fff" stroke-width="3" stroke-dasharray="28,18" opacity="0.8">
+    <line x1="0" y1="310" x2="1400" y2="310"/>
+    <line x1="0" y1="530" x2="1400" y2="530"/>
+    <line x1="0" y1="755" x2="1400" y2="755"/>
+    <line x1="205"  y1="0" x2="205"  y2="900"/>
+    <line x1="510"  y1="0" x2="510"  y2="900"/>
+    <line x1="810"  y1="0" x2="810"  y2="900"/>
+    <line x1="1110" y1="0" x2="1110" y2="900"/>
+  </g>
+  <!-- Sidewalk strips -->
+  <g stroke="#86efac" stroke-width="5" opacity="0.55">
+    <line x1="0" y1="297" x2="1400" y2="297"/>
+    <line x1="0" y1="323" x2="1400" y2="323"/>
+    <line x1="0" y1="517" x2="1400" y2="517"/>
+    <line x1="0" y1="543" x2="1400" y2="543"/>
+    <line x1="192"  y1="0" x2="192"  y2="900"/>
+    <line x1="218"  y1="0" x2="218"  y2="900"/>
+    <line x1="497"  y1="0" x2="497"  y2="900"/>
+    <line x1="523"  y1="0" x2="523"  y2="900"/>
+    <line x1="797"  y1="0" x2="797"  y2="900"/>
+    <line x1="823"  y1="0" x2="823"  y2="900"/>
+    <line x1="1097" y1="0" x2="1097" y2="900"/>
+    <line x1="1123" y1="0" x2="1123" y2="900"/>
+  </g>
+
+  <!-- CITY BLOCKS -->
+  <g opacity="0.32">
+    <rect x="220" y="10"  width="275" height="280" rx="5" fill="#ffe8f0"/>
+    <rect x="525" y="10"  width="270" height="280" rx="5" fill="#e0f7fa"/>
+    <rect x="825" y="10"  width="270" height="280" rx="5" fill="#f3e8ff"/>
+    <rect x="15"  y="325" width="178" height="195" rx="5" fill="#fff9c4"/>
+    <rect x="220" y="325" width="275" height="195" rx="5" fill="#e8f5e9"/>
+    <rect x="525" y="325" width="270" height="195" rx="5" fill="#fce4ec"/>
+    <rect x="825" y="325" width="270" height="195" rx="5" fill="#e8eaf6"/>
+    <rect x="1125" y="325" width="265" height="195" rx="5" fill="#e0f2f1"/>
+    <rect x="15"  y="545" width="178" height="200" rx="5" fill="#f3e8ff"/>
+    <rect x="220" y="545" width="275" height="200" rx="5" fill="#fff3e0"/>
+    <rect x="525" y="545" width="270" height="200" rx="5" fill="#e8f5e9"/>
+    <rect x="825" y="545" width="270" height="200" rx="5" fill="#fce4ec"/>
+    <rect x="1125" y="545" width="265" height="200" rx="5" fill="#fffde7"/>
+  </g>
+
+  <!-- BUILDINGS top-left: blush / mint / lilac -->
+  <g filter="url(#softShadow)">
+    <rect x="232" y="55"  width="58" height="238" rx="6" fill="#ffb7c5"/>
+    <rect x="232" y="55"  width="58" height="238" rx="6" fill="none" stroke="#ff8fab" stroke-width="2"/>
+    <g fill="rgba(255,255,255,0.65)">
+      <rect x="240" y="68"  width="9" height="11" rx="2"/><rect x="254" y="68"  width="9" height="11" rx="2"/><rect x="268" y="68"  width="9" height="11" rx="2"/>
+      <rect x="240" y="87"  width="9" height="11" rx="2"/><rect x="254" y="87"  width="9" height="11" rx="2"/>
+      <rect x="240" y="106" width="9" height="11" rx="2"/><rect x="268" y="106" width="9" height="11" rx="2"/>
+      <rect x="254" y="125" width="9" height="11" rx="2"/>
+      <rect x="240" y="144" width="9" height="11" rx="2"/><rect x="268" y="144" width="9" height="11" rx="2"/>
+    </g>
+    <line x1="261" y1="55" x2="261" y2="34" stroke="#ff8fab" stroke-width="3"/>
+    <circle cx="261" cy="32" r="5" fill="#ff6f72"/>
+
+    <rect x="305" y="115" width="72" height="178" rx="6" fill="#b8f5e6"/>
+    <rect x="305" y="115" width="72" height="178" rx="6" fill="none" stroke="#6ee7b7" stroke-width="2"/>
+    <g fill="rgba(255,255,255,0.6)">
+      <rect x="313" y="126" width="10" height="13" rx="2"/><rect x="328" y="126" width="10" height="13" rx="2"/>
+      <rect x="343" y="126" width="10" height="13" rx="2"/><rect x="358" y="126" width="10" height="13" rx="2"/>
+      <rect x="313" y="147" width="10" height="13" rx="2"/><rect x="343" y="147" width="10" height="13" rx="2"/>
+      <rect x="328" y="168" width="10" height="13" rx="2"/><rect x="358" y="168" width="10" height="13" rx="2"/>
+      <rect x="313" y="189" width="10" height="13" rx="2"/><rect x="343" y="189" width="10" height="13" rx="2"/>
+    </g>
+
+    <rect x="392" y="75"  width="85" height="218" rx="6" fill="#c4b5fd"/>
+    <rect x="392" y="75"  width="85" height="218" rx="6" fill="none" stroke="#a78bfa" stroke-width="2"/>
+    <g fill="rgba(255,255,255,0.55)">
+      <rect x="400" y="86"  width="11" height="14" rx="2"/><rect x="416" y="86"  width="11" height="14" rx="2"/>
+      <rect x="432" y="86"  width="11" height="14" rx="2"/><rect x="448" y="86"  width="11" height="14" rx="2"/>
+      <rect x="462" y="86"  width="11" height="14" rx="2"/>
+      <rect x="400" y="108" width="11" height="14" rx="2"/><rect x="432" y="108" width="11" height="14" rx="2"/>
+      <rect x="400" y="130" width="11" height="14" rx="2"/><rect x="416" y="130" width="11" height="14" rx="2"/>
+      <rect x="462" y="130" width="11" height="14" rx="2"/>
+      <rect x="416" y="152" width="11" height="14" rx="2"/><rect x="448" y="152" width="11" height="14" rx="2"/>
+    </g>
+    <line x1="434" y1="75" x2="434" y2="52" stroke="#a78bfa" stroke-width="2.5"/>
+    <circle cx="434" cy="50" r="4" fill="#818cf8"/>
+  </g>
+
+  <!-- BUILDINGS top-center: lemon + sky-blue -->
+  <g filter="url(#softShadow)">
+    <rect x="535" y="42"  width="95" height="252" rx="6" fill="#fde68a"/>
+    <rect x="535" y="42"  width="95" height="252" rx="6" fill="none" stroke="#fbbf24" stroke-width="2"/>
+    <g fill="rgba(255,255,255,0.55)">
+      <rect x="544" y="54"  width="12" height="15" rx="2"/><rect x="561" y="54"  width="12" height="15" rx="2"/>
+      <rect x="578" y="54"  width="12" height="15" rx="2"/><rect x="595" y="54"  width="12" height="15" rx="2"/>
+      <rect x="612" y="54"  width="12" height="15" rx="2"/>
+      <rect x="544" y="77"  width="12" height="15" rx="2"/><rect x="578" y="77"  width="12" height="15" rx="2"/>
+      <rect x="595" y="77"  width="12" height="15" rx="2"/>
+      <rect x="544" y="100" width="12" height="15" rx="2"/><rect x="561" y="100" width="12" height="15" rx="2"/>
+      <rect x="612" y="100" width="12" height="15" rx="2"/>
+      <rect x="561" y="123" width="12" height="15" rx="2"/><rect x="595" y="123" width="12" height="15" rx="2"/>
+    </g>
+    <rect x="565" y="30" width="34" height="14" rx="4" fill="#d97706"/>
+
+    <rect x="648" y="68"  width="76" height="226" rx="6" fill="#bae6fd"/>
+    <rect x="648" y="68"  width="76" height="226" rx="6" fill="none" stroke="#7dd3fc" stroke-width="2"/>
+    <g fill="rgba(255,255,255,0.6)">
+      <rect x="657" y="80"  width="11" height="13" rx="2"/><rect x="673" y="80"  width="11" height="13" rx="2"/>
+      <rect x="689" y="80"  width="11" height="13" rx="2"/><rect x="705" y="80"  width="11" height="13" rx="2"/>
+      <rect x="657" y="101" width="11" height="13" rx="2"/><rect x="689" y="101" width="11" height="13" rx="2"/>
+      <rect x="705" y="101" width="11" height="13" rx="2"/>
+      <rect x="657" y="122" width="11" height="13" rx="2"/><rect x="673" y="122" width="11" height="13" rx="2"/>
+      <rect x="657" y="143" width="11" height="13" rx="2"/><rect x="705" y="143" width="11" height="13" rx="2"/>
+    </g>
+    <line x1="686" y1="68" x2="686" y2="45" stroke="#7dd3fc" stroke-width="2.5"/>
+    <circle cx="686" cy="43" r="4" fill="#38bdf8"/>
+  </g>
+
+  <!-- BUILDINGS top-right: lime + peach -->
+  <g filter="url(#softShadow)">
+    <rect x="840" y="36"  width="68" height="258" rx="6" fill="#d9f99d"/>
+    <rect x="840" y="36"  width="68" height="258" rx="6" fill="none" stroke="#a3e635" stroke-width="2"/>
+    <g fill="rgba(255,255,255,0.55)">
+      <rect x="849" y="48"  width="10" height="13" rx="2"/><rect x="864" y="48"  width="10" height="13" rx="2"/>
+      <rect x="879" y="48"  width="10" height="13" rx="2"/>
+      <rect x="849" y="69"  width="10" height="13" rx="2"/><rect x="879" y="69"  width="10" height="13" rx="2"/>
+      <rect x="864" y="90"  width="10" height="13" rx="2"/>
+      <rect x="849" y="111" width="10" height="13" rx="2"/><rect x="879" y="111" width="10" height="13" rx="2"/>
+      <rect x="864" y="132" width="10" height="13" rx="2"/>
+    </g>
+
+    <rect x="922" y="58"  width="90" height="236" rx="6" fill="#fecdd3"/>
+    <rect x="922" y="58"  width="90" height="236" rx="6" fill="none" stroke="#fda4af" stroke-width="2"/>
+    <g fill="rgba(255,255,255,0.55)">
+      <rect x="931" y="70"  width="11" height="14" rx="2"/><rect x="947" y="70"  width="11" height="14" rx="2"/>
+      <rect x="963" y="70"  width="11" height="14" rx="2"/><rect x="979" y="70"  width="11" height="14" rx="2"/>
+      <rect x="995" y="70"  width="11" height="14" rx="2"/>
+      <rect x="931" y="92"  width="11" height="14" rx="2"/><rect x="963" y="92"  width="11" height="14" rx="2"/>
+      <rect x="995" y="92"  width="11" height="14" rx="2"/>
+      <rect x="947" y="114" width="11" height="14" rx="2"/><rect x="979" y="114" width="11" height="14" rx="2"/>
+      <rect x="931" y="136" width="11" height="14" rx="2"/><rect x="963" y="136" width="11" height="14" rx="2"/>
+    </g>
+    <line x1="967" y1="58" x2="967" y2="36" stroke="#fda4af" stroke-width="2.5"/>
+    <circle cx="967" cy="34" r="4" fill="#f43f5e"/>
+  </g>
+
+  <!-- MID-ROW buildings -->
+  <g filter="url(#softShadow)">
+    <rect x="20"  y="332" width="65" height="162" rx="5" fill="#c4b5fd"/>
+    <rect x="20"  y="332" width="65" height="162" rx="5" fill="none" stroke="#a78bfa" stroke-width="1.5"/>
+    <g fill="rgba(255,255,255,0.55)">
+      <rect x="28" y="342" width="9" height="12" rx="2"/><rect x="42" y="342" width="9" height="12" rx="2"/><rect x="56" y="342" width="9" height="12" rx="2"/>
+      <rect x="28" y="362" width="9" height="12" rx="2"/><rect x="56" y="362" width="9" height="12" rx="2"/>
+      <rect x="42" y="382" width="9" height="12" rx="2"/>
+      <rect x="28" y="402" width="9" height="12" rx="2"/><rect x="56" y="402" width="9" height="12" rx="2"/>
+    </g>
+    <rect x="232" y="332" width="80" height="182" rx="5" fill="#fde68a"/>
+    <rect x="232" y="332" width="80" height="182" rx="5" fill="none" stroke="#fbbf24" stroke-width="1.5"/>
+    <g fill="rgba(255,255,255,0.55)">
+      <rect x="240" y="342" width="10" height="13" rx="2"/><rect x="255" y="342" width="10" height="13" rx="2"/>
+      <rect x="270" y="342" width="10" height="13" rx="2"/><rect x="285" y="342" width="10" height="13" rx="2"/>
+      <rect x="300" y="342" width="10" height="13" rx="2"/>
+      <rect x="240" y="363" width="10" height="13" rx="2"/><rect x="270" y="363" width="10" height="13" rx="2"/>
+      <rect x="285" y="363" width="10" height="13" rx="2"/>
+      <rect x="255" y="384" width="10" height="13" rx="2"/><rect x="300" y="384" width="10" height="13" rx="2"/>
+    </g>
+    <rect x="828" y="336" width="78" height="176" rx="5" fill="#fecdd3"/>
+    <rect x="828" y="336" width="78" height="176" rx="5" fill="none" stroke="#fda4af" stroke-width="1.5"/>
+    <g fill="rgba(255,255,255,0.55)">
+      <rect x="836" y="346" width="10" height="13" rx="2"/><rect x="851" y="346" width="10" height="13" rx="2"/>
+      <rect x="866" y="346" width="10" height="13" rx="2"/><rect x="881" y="346" width="10" height="13" rx="2"/>
+      <rect x="836" y="368" width="10" height="13" rx="2"/><rect x="866" y="368" width="10" height="13" rx="2"/>
+      <rect x="836" y="390" width="10" height="13" rx="2"/><rect x="881" y="390" width="10" height="13" rx="2"/>
+    </g>
+  </g>
+
+  <!-- PARK -->
+  <ellipse cx="1255" cy="445" rx="125" ry="82" fill="url(#parkGrad)" opacity="0.5"/>
+  <text x="1255" y="450" text-anchor="middle" font-size="30" opacity="0.7">🌳</text>
+  <text x="1218" y="428" text-anchor="middle" font-size="20" opacity="0.65">🌸</text>
+  <text x="1292" y="428" text-anchor="middle" font-size="20" opacity="0.65">🌸</text>
+  <text x="1255" y="415" text-anchor="middle" font-size="14" opacity="0.6">🌼</text>
+
+  <!-- FOUNTAIN -->
+  <ellipse cx="695" cy="618" rx="44" ry="22" fill="#bae6fd" opacity="0.7"/>
+  <circle cx="695" cy="608" r="16" fill="#7dd3fc" opacity="0.6"/>
+  <text x="695" y="614" text-anchor="middle" font-size="20" opacity="0.8">⛲</text>
+
+  <!-- TREES -->
+  <g font-size="22" opacity="0.65">
+    <text x="178" y="270">🌳</text><text x="178" y="482">🌳</text><text x="178" y="700">🌳</text>
+    <text x="488" y="270">🌳</text><text x="488" y="482">🌳</text><text x="488" y="700">🌳</text>
+    <text x="788" y="270">🌳</text><text x="788" y="482">🌳</text>
+    <text x="1088" y="270">🌳</text><text x="1088" y="482">🌳</text>
+    <text x="80" y="272">🌸</text><text x="345" y="272">🌸</text><text x="640" y="272">🌸</text>
+    <text x="948" y="272">🌸</text><text x="1195" y="272">🌸</text>
+  </g>
+
+  <!-- DECO hot air balloons bg -->
+  <g opacity="0.2">
+    <ellipse cx="128" cy="175" rx="38" ry="48" fill="#ff8fab"/>
+    <rect x="118" y="221" width="20" height="14" rx="3" fill="#d97706"/>
+    <line x1="118" y1="221" x2="120" y2="225" stroke="#d97706" stroke-width="1.5"/>
+    <line x1="138" y1="221" x2="136" y2="225" stroke="#d97706" stroke-width="1.5"/>
+  </g>
+  <g opacity="0.18">
+    <ellipse cx="1348" cy="225" rx="34" ry="44" fill="#818cf8"/>
+    <rect x="1338" y="267" width="18" height="12" rx="3" fill="#6a3db5"/>
+  </g>
+
+  <!-- Subtle border -->
+  <rect x="2" y="2" width="1396" height="896" fill="none" stroke="rgba(200,180,255,0.22)" stroke-width="3" rx="4"/>
+</svg>
+
+<!-- PAGE -->
+<div class="map-world">
+  <div class="page">
+
+    <!-- HEADER -->
+    <div class="header-banner">
+      <span class="banner-stars">🌟 🏙️ 🌟</span>
+      <div class="title-main">City Treasure Hunt</div>
+      <div class="title-sub">✨ Explore · Discover · Collect ✨</div>
+    </div>
+
+    <!-- PROGRESS -->
+    <div class="progress-wrap">
+      <span class="progress-label">🗺️ Quest Progress</span>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <span class="progress-count" id="progressCount">0 / 2</span>
+    </div>
+
+    <!-- MAP PANEL -->
+    <div class="map-panel">
+      <div class="map-panel-inner">
+
+        <div class="mini-map-wrap">
+          <svg class="mini-map-svg" viewBox="0 0 620 260" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="mmSky" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#c9f0ff"/>
+                <stop offset="100%" stop-color="#e8f8f0"/>
+              </linearGradient>
+            </defs>
+            <rect width="620" height="260" rx="4" fill="url(#mmSky)"/>
+
+            <!-- Roads -->
+            <g stroke="#d5cef5" stroke-width="16">
+              <line x1="0" y1="140" x2="620" y2="140"/>
+              <line x1="0" y1="210" x2="620" y2="210"/>
+              <line x1="100" y1="0"  x2="100" y2="260"/>
+              <line x1="270" y1="0"  x2="270" y2="260"/>
+              <line x1="440" y1="0"  x2="440" y2="260"/>
+            </g>
+            <g stroke="white" stroke-width="2" stroke-dasharray="18,10" opacity="0.85">
+              <line x1="0" y1="140" x2="620" y2="140"/>
+              <line x1="0" y1="210" x2="620" y2="210"/>
+              <line x1="100" y1="0"  x2="100" y2="260"/>
+              <line x1="270" y1="0"  x2="270" y2="260"/>
+              <line x1="440" y1="0"  x2="440" y2="260"/>
+            </g>
+
+            <!-- Pastel blocks -->
+            <rect x="110" y="8"   width="150" height="124" rx="4" fill="#ffe8f0" opacity="0.55"/>
+            <rect x="280" y="8"   width="150" height="124" rx="4" fill="#e0f7fa" opacity="0.55"/>
+            <rect x="450" y="8"   width="162" height="124" rx="4" fill="#f3e8ff" opacity="0.55"/>
+            <rect x="8"   y="152" width="84"  height="50"  rx="4" fill="#fff9c4" opacity="0.55"/>
+            <rect x="110" y="152" width="150" height="50"  rx="4" fill="#e8f5e9" opacity="0.55"/>
+            <rect x="280" y="152" width="150" height="50"  rx="4" fill="#fce4ec" opacity="0.55"/>
+            <rect x="450" y="152" width="162" height="50"  rx="4" fill="#e8eaf6" opacity="0.55"/>
+
+            <!-- Mini buildings colorful -->
+            <g opacity="0.9">
+              <rect x="120" y="18"  width="28" height="116" rx="3" fill="#ffb7c5"/>
+              <rect x="154" y="40"  width="24" height="94"  rx="3" fill="#b8f5e6"/>
+              <rect x="184" y="28"  width="32" height="106" rx="3" fill="#c4b5fd"/>
+              <rect x="222" y="50"  width="22" height="84"  rx="3" fill="#fde68a"/>
+              <rect x="290" y="22"  width="30" height="112" rx="3" fill="#bae6fd"/>
+              <rect x="326" y="38"  width="26" height="96"  rx="3" fill="#fecdd3"/>
+              <rect x="358" y="18"  width="28" height="116" rx="3" fill="#d9f99d"/>
+              <rect x="392" y="44"  width="24" height="90"  rx="3" fill="#fde68a"/>
+              <rect x="458" y="28"  width="32" height="106" rx="3" fill="#c4b5fd"/>
+              <rect x="496" y="14"  width="28" height="120" rx="3" fill="#ffb7c5"/>
+              <rect x="530" y="36"  width="26" height="98"  rx="3" fill="#bae6fd"/>
+              <rect x="562" y="24"  width="32" height="110" rx="3" fill="#d9f99d"/>
+            </g>
+
+            <!-- Park oval -->
+            <ellipse cx="54" cy="72" rx="38" ry="58" fill="#b8f5e6" opacity="0.5"/>
+            <text x="54" y="78" text-anchor="middle" font-size="18">🌳</text>
+
+            <!-- Route dotted purple -->
+            <path d="M54,222 Q140,196 200,168 Q272,140 342,114 Q402,92 472,86 Q522,82 562,84"
+                  fill="none" stroke="#c084fc" stroke-width="3.5" stroke-dasharray="10,6"
+                  stroke-linecap="round" opacity="0.9"
+                  style="filter:drop-shadow(0 0 5px rgba(192,132,252,0.7))"/>
+
+            <!-- Waypoints -->
+            <g fill="#f0abfc" stroke="#9333ea" stroke-width="2">
+              <circle cx="54"  cy="222" r="6"/>
+              <circle cx="200" cy="168" r="5"/>
+              <circle cx="342" cy="114" r="5"/>
+              <circle cx="472" cy="86"  r="5"/>
+              <circle cx="562" cy="84"  r="6"/>
+            </g>
+
+            <!-- X destination -->
+            <circle cx="562" cy="84" r="18" fill="rgba(255,111,114,0.18)" stroke="rgba(255,111,114,0.5)" stroke-width="1.5"/>
+            <line x1="553" y1="75" x2="571" y2="93" stroke="#ff6f72" stroke-width="4" stroke-linecap="round"/>
+            <line x1="571" y1="75" x2="553" y2="93" stroke="#ff6f72" stroke-width="4" stroke-linecap="round"/>
+
+            <!-- Deco emojis -->
+            <text x="12" y="22" font-family="Fredoka One, cursive" font-size="11" fill="rgba(100,60,180,0.5)" letter-spacing="1">🏙️ CITY MAP</text>
+            <text x="12" y="105" font-size="14" opacity="0.65">🏪</text>
+            <text x="415" y="200" font-size="14" opacity="0.65">🎠</text>
+            <text x="300" y="242" font-size="14" opacity="0.65">⛲</text>
+            <text x="530" y="200" font-size="14" opacity="0.65">🎪</text>
+            <text x="200" y="240" font-size="12" opacity="0.6">🌸</text>
+
+            <!-- Border -->
+            <rect x="3" y="3" width="614" height="254" fill="none" stroke="rgba(192,132,252,0.38)" stroke-width="2" rx="3"/>
+          </svg>
+        </div>
+
+        <!-- Compass sidebar -->
+        <div class="compass-sidebar">
+          <div class="compass-label">🧭 NAVIGATE</div>
+          <svg class="compass-svg" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="45" cy="45" r="43" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="3"/>
+            <circle cx="45" cy="45" r="37" fill="none" stroke="#e9d5ff" stroke-width="1.5"/>
+            <g stroke="#c4b5fd" stroke-width="1" opacity="0.6">
+              <line x1="45" y1="5"  x2="45" y2="15"/>
+              <line x1="45" y1="75" x2="45" y2="85"/>
+              <line x1="5"  y1="45" x2="15" y2="45"/>
+              <line x1="75" y1="45" x2="85" y2="45"/>
+            </g>
+            <polygon points="45,10 48,42 45,45 42,42" fill="#fde68a" opacity="0.5"/>
+            <polygon points="45,80 48,48 45,45 42,48" fill="#ddd" opacity="0.4"/>
+            <polygon points="10,45 42,42 45,45 42,48" fill="#fde68a" opacity="0.4"/>
+            <polygon points="80,45 48,42 45,45 48,48" fill="#ddd" opacity="0.4"/>
+            <g class="compass-needle-el">
+              <polygon points="45,11 48.5,44 45,47 41.5,44" fill="#ff6f72"/>
+              <polygon points="45,79 48.5,46 45,47 41.5,46" fill="#c4b5fd"/>
+            </g>
+            <circle cx="45" cy="45" r="7" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="2"/>
+            <circle cx="45" cy="45" r="3" fill="#9c6fde"/>
+            <text x="45" y="9"  text-anchor="middle" font-family="Fredoka One, cursive" font-size="9" fill="#ff6f72">N</text>
+            <text x="45" y="89" text-anchor="middle" font-family="Fredoka One, cursive" font-size="8" fill="#9c6fde">S</text>
+            <text x="87" y="49" text-anchor="middle" font-family="Fredoka One, cursive" font-size="8" fill="#9c6fde">E</text>
+            <text x="3"  y="49" text-anchor="middle" font-family="Fredoka One, cursive" font-size="8" fill="#9c6fde">W</text>
+          </svg>
+          <div class="distance-badge" id="distanceBadge">📍 2 CLUES LEFT</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CLUE CARDS -->
+    <div class="clues-grid">
+
+      <div class="clue-card card1" id="card1">
+        <div class="card-header">
+          <div class="card-icon-badge">🔍</div>
+          <div class="card-header-text">
+            <div class="card-num"></div>
+            <div class="card-title">Clue #1</div>
+          </div>
+          <div class="status-pill" id="pill1">🔒 Locked</div>
+        </div>
+        <div class="card-body">
+          <div class="riddle-bubble">
+            <p class="riddle-text">
+               From sky it make three pointed edges,that look in white,<br/>               
+               Having Stairs that moves yet no one climbs,<br/>
+               Where shops and movies kill the time.
+               <br/>
+               <br/>
+               <br/>
+               <br/>
+               <br/>
+              <em></em>
+            </p>
+          </div>
+          <span class="answer-label">⌨️ Your Answer:</span>
+          <div class="answer-row">
+            <input class="answer-input" id="ans1" type="text" placeholder="Type here…" autocomplete="off"/>
+            <button class="answer-btn" id="btn1" onclick="checkAns(1)">Check!</button>
+          </div>
+          <div class="feedback-msg" id="fb1"></div>
+        </div>
+      </div>
+
+      <div class="clue-card card2" id="card2">
+        <div class="card-header">
+          <div class="card-icon-badge">🗝️</div>
+          <div class="card-header-text">
+            <div class="card-num"></div>
+            <div class="card-title">Clue #2</div>
+          </div>
+          <div class="status-pill" id="pill2">🔒 Locked</div>
+        </div>
+        <div class="card-body">
+          <div class="riddle-bubble">
+            <p class="riddle-text">
+              Word 1:<br/>
+               Wrapped in cover,Sour or Sweet,<br/>
+               Clourfull and Flavourful, a lovely treat.<br/>
+               <br/>
+              Word 2:<br/>
+               I drink from Earth yet I chase the sky,<br/>
+               Life thrives on me yet I go unseen however I m green.
+              <em></em>
+            </p>
+          </div>
+          <span class="answer-label">⌨️ Your Answer:</span>
+          <div class="answer-row">
+            <input class="answer-input" id="ans2" type="text" placeholder="Type here…" autocomplete="off"/>
+            <button class="answer-btn" id="btn2" onclick="checkAns(2)">Check!</button>
+          </div>
+          <div class="feedback-msg" id="fb2"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- TREASURE REVEAL -->
+    <div id="treasure-reveal">
+      <div class="treasure-card">
+        <span class="confetti-row">🎉 🏆 🎉</span>
+        <div class="reveal-title">🥇 You Found the Treasure! 🥇</div>
+        <div style="font-size:2.5rem;margin:10px 0;">🎀💎🌟💎🎀</div>
+        <p class="reveal-text">
+          Amazing work, Big Brain! 🗺️<br/>
+          Run N Collect your Reward,<br/>
+          <br/>
+          <strong></strong>
+        </p>
+        <p class="reveal-sub">⭐ Quest Complete · All Clues Solved ⭐</p>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+      <p>🏙️ Treasure Hunt · Happy Hunting! 🗺️</p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const ANSWERS = {
+  1: ['Elements','elements','Elements Mall','elements mall','Elements mall'],
+  2: ['Candy Tree','candy tree','Candy tree']
+};
+let solved = { 1:false, 2:false };
+let solvedCount = 0;
+
+function checkAns(n) {
+  const inp  = document.getElementById('ans' + n);
+  const fb   = document.getElementById('fb' + n);
+  const btn  = document.getElementById('btn' + n);
+  const pill = document.getElementById('pill' + n);
+  const val  = inp.value.trim().toLowerCase();
+  if (!val) return;
+
+  if (ANSWERS[n].includes(val)) {
+    fb.textContent = '✅ Correct! You unlocked this clue!';
+    fb.className = 'feedback-msg fb-ok';
+    inp.disabled = btn.disabled = true;
+    pill.textContent = '✅ Solved!';
+    pill.classList.add('solved');
+    solved[n] = true;
+    solvedCount++;
+    updateProgress();
+    spawnCoins();
+    if (solved[1] && solved[2]) setTimeout(showTreasure, 700);
+  } else {
+    fb.textContent = '❌ Not quite — try again, adventurer!';
+    fb.className = 'feedback-msg fb-err';
+    inp.style.borderColor = '#fda4af';
+    inp.style.background = '#fff1f2';
+    inp.select();
+    setTimeout(() => {
+      inp.style.borderColor = '';
+      inp.style.background = '';
+      fb.textContent = '';
+    }, 2500);
+  }
+}
+
+function updateProgress() {
+  const pct = (solvedCount / 2) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressCount').textContent = solvedCount + ' / 2';
+  const badge = document.getElementById('distanceBadge');
+  if (badge) {
+    const left = 2 - solvedCount;
+    badge.textContent = left > 0 ? `📍 ${left} CLUE${left>1?'S':''} LEFT` : '🏆 ALL SOLVED!';
+    if (left === 0) badge.style.background = 'linear-gradient(135deg,#00bfa5,#00e5b0)';
+  }
+}
+
+function spawnCoins() {
+  const emojis = ['🌟','🎀','💎','✨','🎊','🪙','🌈','🎈'];
+  for (let i = 0; i < 14; i++) {
+    setTimeout(() => {
+      const coin = document.createElement('div');
+      coin.className = 'coin';
+      coin.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      coin.style.cssText = `left:${8 + Math.random() * 84}%;top:${8 + Math.random() * 45}%;animation-delay:${Math.random() * 0.4}s;`;
+      document.body.appendChild(coin);
+      setTimeout(() => coin.remove(), 2000);
+    }, i * 80);
+  }
+}
+
+function showTreasure() {
+  const r = document.getElementById('treasure-reveal');
+  r.style.display = 'block';
+  spawnCoins();
+  setTimeout(spawnCoins, 600);
+  setTimeout(spawnCoins, 1200);
+  r.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+document.querySelectorAll('.answer-input').forEach((el, i) => {
+  el.addEventListener('keydown', e => { if (e.key === 'Enter') checkAns(i + 1); });
+});
+</script>
+</body>
+</html>
